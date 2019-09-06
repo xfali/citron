@@ -22,7 +22,8 @@ func main() {
     sourceDir := flag.String("s", "", "source dir")
     destUri := flag.String("d", "", "dest uri")
     checksumType := flag.String("check-type", "", "checksum type: MD5 | SHA256")
-    incremental := flag.Bool("incr", true, "incremental backup")
+    incremental := flag.String("incr", "true", "incremental backup")
+    newRepo := flag.String("n", "true", "creating a new backup repository every time")
     mergeSrc := flag.String("merge-src", "", "path of src merge dir")
     mergeDest := flag.String("merge-dest", "", "path of dest merge dir")
     mergeSave := flag.String("merge-save", "", "dir save merge result")
@@ -32,7 +33,8 @@ func main() {
     config.GConfig.SourceDir = *sourceDir
     config.GConfig.DestUri = *destUri
     config.GConfig.ChecksumType = *checksumType
-    config.GConfig.Incremental = *incremental
+    config.GConfig.Incremental = *incremental == "true"
+    config.GConfig.NewRepo = *newRepo == "true"
 
     log.Info("config: %s\n", config.GConfig.String())
 
@@ -54,7 +56,11 @@ func main() {
         log.Fatal(errors.TargetUriEmpty.Error())
     }
 
-    t, err := transport.Open("file", config.GConfig.DestUri, config.GConfig.Incremental)
+    t, err := transport.Open(
+        "file",
+        config.GConfig.DestUri,
+        config.GConfig.Incremental,
+        config.GConfig.NewRepo)
     if err != nil {
         log.Fatal(err.Error())
     }

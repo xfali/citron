@@ -13,7 +13,7 @@ import (
 )
 
 type Transport interface {
-    Open(uri string, incremental bool, timestamp time.Time) error
+    Open(uri string, incremental, newRepo bool, timestamp time.Time) error
     GetUri(relDir, file string) (uri.URI, error)
     Send(info fileinfo.FileInfo) error
     Close() error

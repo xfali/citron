@@ -16,9 +16,9 @@ var TransportCache = map[string]Transport{
     "file": NewDefaultTransport(),
 }
 
-func Open(transType, url string, incremental bool) (Transport, error) {
+func Open(transType, url string, incremental, newRepo bool) (Transport, error) {
     if t, ok := TransportCache[transType]; ok {
-        err := t.Open(url, incremental, time.Now())
+        err := t.Open(url, incremental, newRepo, time.Now())
         if err != nil {
             log.Warn(errors.TransportOpenError.Error())
             return nil, err

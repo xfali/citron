@@ -11,11 +11,19 @@ import (
     "fbt/io"
     "fbt/store"
     "fbt/transport"
+    "path/filepath"
+    "strings"
 )
 
 //全量更新
 func allProcess(rootDir, srcDir string, trans transport.Transport, store store.MetaStore) error {
-    err := store.Read(srcDir)
+    rel := io.SubPath(srcDir, rootDir)
+    metaFile := strings.Replace(rel, string(filepath.Separator), "_", -1)
+    if metaFile == "" {
+        metaFile = "root"
+    }
+
+    err := store.Read(metaFile)
     if err != nil {
         return err
     }
@@ -26,8 +34,6 @@ func allProcess(rootDir, srcDir string, trans transport.Transport, store store.M
     }
 
     var result = files
-
-    rel := io.SubPath(srcDir, rootDir)
 
     errDiff := processDiff(rel, result, trans, store)
     if errDiff != nil {

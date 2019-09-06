@@ -27,13 +27,22 @@ const (
 )
 
 type LocalFileTransport struct {
-    target      string
-    timestamp   time.Time
-    store       store.MetaStore
+    //仓库入口地址，备份目录的根目录
+    target string
+    //时间戳
+    timestamp time.Time
+    //单次备份详细日志
+    store store.MetaStore
+    //是否每次都使用新仓储
+    newRepo bool
+    //是否增量备份
     incremental bool
-    version     string
-    record      *history.Recorder
-    backupDir   string
+    //版本
+    version string
+    //备份日志
+    record *history.Recorder
+    //实际备份目标目录
+    backupDir string
 }
 
 func NewDefaultTransport() Transport {
@@ -44,7 +53,7 @@ func NewDefaultTransport() Transport {
     return &l
 }
 
-func (t *LocalFileTransport) Open(uri string, incremental bool, timestamp time.Time) error {
+func (t *LocalFileTransport) Open(uri string, incremental, newRepo bool, timestamp time.Time) error {
     t.target = uri
     if !io.IsPathExists(t.target) {
         err := io.Mkdir(t.target)
@@ -57,11 +66,8 @@ func (t *LocalFileTransport) Open(uri string, incremental bool, timestamp time.T
         return err
     }
 
-    if !incremental {
-
-    }
-
     t.incremental = incremental
+    t.newRepo = newRepo
     t.timestamp = timestamp
 
     errP := t.prepareBackupDir()
@@ -70,15 +76,18 @@ func (t *LocalFileTransport) Open(uri string, incremental bool, timestamp time.T
     }
 
     s := store.NewDefaultStore()
-    errO := s.Open( filepath.Join(t.backupDir, config.InfoDir), t.backupDir)
+    errO := s.Open(filepath.Join(t.backupDir, config.InfoDir), t.backupDir)
     if errO != nil {
         return errO
     }
-    errR := s.Read(t.backupDir)
+    t.store = s
+
+    errR := t.storeRead()
     if errR != nil {
+        s.Close()
+        t.record.Close()
         return errR
     }
-    t.store = s
 
     return t.record.Append(history.History{
         Timestamp:   timestamp,
@@ -89,15 +98,36 @@ func (t *LocalFileTransport) Open(uri string, incremental bool, timestamp time.T
 }
 
 func (t *LocalFileTransport) prepareBackupDir() error {
-    dir := t.timestamp.Format("20060102150405")
+    dir := "backup"
+    if t.newRepo {
+        dir = t.timeStr()
+    }
+
     dir = filepath.Join(t.target, dir)
     if io.IsPathExists(dir) {
-        return errors.New("backup dir exists! ")
+        if t.newRepo {
+            return errors.New("backup dir exists! ")
+        }
     } else {
         io.Mkdir(dir)
-        t.backupDir = dir
     }
+    t.backupDir = dir
+
     return nil
+}
+
+func (t *LocalFileTransport) storeRead() error {
+    name := ""
+    if t.newRepo {
+        name = "root"
+    } else {
+        name = t.timeStr()
+    }
+    return t.store.Read(name)
+}
+
+func (t *LocalFileTransport) timeStr() string {
+    return t.timestamp.Format("20060102150405")
 }
 
 func (t *LocalFileTransport) Send(info fileinfo.FileInfo) error {
@@ -138,6 +168,12 @@ func create(info fileinfo.FileInfo) error {
     if info.IsDir {
         return io.Mkdir(dest)
     } else {
+        dir := filepath.Dir(dest)
+        if !io.IsPathExists(dir) {
+            if err := io.Mkdir(dir); err != nil {
+                return err
+            }
+        }
         return myio.CopyFile(src, dest)
     }
 }

@@ -17,11 +17,12 @@ type Config struct {
     DestUri      string
     ChecksumType string
     Incremental  bool
+    NewRepo      bool
 }
 
 var GConfig Config
 
-func (c *Config)String() string {
+func (c *Config) String() string {
     b, err := json.Marshal(GConfig)
     if err != nil {
         return ""

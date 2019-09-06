@@ -11,11 +11,19 @@ import (
     "fbt/io"
     "fbt/store"
     "fbt/transport"
+    "path/filepath"
+    "strings"
 )
 
 //增量更新
 func incrementalProcess(rootDir, srcDir string, trans transport.Transport, store store.MetaStore) error {
-    err := store.Read(srcDir)
+    rel := io.SubPath(srcDir, rootDir)
+    metaFile := strings.Replace(rel, string(filepath.Separator), "_", -1)
+    if metaFile == "" {
+        metaFile = "root"
+    }
+
+    err := store.Read(metaFile)
     if err != nil {
         return err
     }
@@ -32,8 +40,6 @@ func incrementalProcess(rootDir, srcDir string, trans transport.Transport, store
     var result []fileinfo.FileInfo
     process(allInfo, files, &result, false)
     process(files, allInfo, &result, true)
-
-    rel := io.SubPath(srcDir, rootDir)
 
     errDiff := processDiff(rel, result, trans, store)
     if errDiff != nil {

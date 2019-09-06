@@ -14,7 +14,6 @@ import (
     "io/ioutil"
     "os"
     "path/filepath"
-    "strings"
 )
 
 const(
@@ -48,19 +47,13 @@ func (s *JsonStore) Open(storeDir string, dir string) error {
     return nil
 }
 
-func (s *JsonStore) resetData(dir string) error {
+func (s *JsonStore) resetData(filename string) error {
     //close at first
     s.Close()
 
-    dir = filepath.Clean(dir)
+    filename += MetaFileName
 
-    rel := io.SubPath(dir, s.root)
-    rel = strings.Replace(rel, string(filepath.Separator), "_", -1)
-    if rel == "" {
-        rel = "root"
-    }
-    rel += MetaFileName
-    path := filepath.Join(s.metaDir, rel)
+    path := filepath.Join(s.metaDir, filename)
     if utilio.IsPathExists(path) {
         file, err := os.OpenFile(path, os.O_RDONLY, 0644)
         if err != nil {
@@ -123,8 +116,8 @@ func (s *JsonStore) find(filepath string) int {
     return -1
 }
 
-func (s *JsonStore) Read(dir string) error {
-    err := s.resetData(dir)
+func (s *JsonStore) Read(uri string) error {
+    err := s.resetData(uri)
     if err != nil {
         return err
     }
