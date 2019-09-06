@@ -16,6 +16,7 @@ import (
     "flag"
     "github.com/xfali/goutils/log"
     "path/filepath"
+    "strings"
 )
 
 func main() {
@@ -50,13 +51,7 @@ func main() {
         }
     }
 
-    if config.GConfig.SourceDir == "" {
-        log.Fatal(errors.SourceDirNotExists.Error())
-    }
-
-    if config.GConfig.DestUri == "" {
-        log.Fatal(errors.TargetUriEmpty.Error())
-    }
+    checkResource()
 
     t, err := transport.Open(
         "file",
@@ -79,5 +74,23 @@ func main() {
     errP := process.Process(config.GConfig.SourceDir, t, s)
     if errP != nil {
         log.Fatal(errP.Error())
+    }
+}
+
+func checkResource() {
+    if config.GConfig.SourceDir == "" {
+        log.Fatal(errors.SourceDirNotExists.Error())
+    }
+
+    if config.GConfig.DestUri == "" {
+        log.Fatal(errors.TargetUriEmpty.Error())
+    }
+
+    if config.GConfig.SourceDir == config.GConfig.DestUri {
+        log.Fatal(errors.SourceAndTargetSame.Error())
+    }
+
+    if strings.Index(config.GConfig.DestUri, config.GConfig.SourceDir) != -1 {
+        log.Fatal(errors.SourceOrTargetError.Error())
     }
 }

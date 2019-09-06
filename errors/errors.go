@@ -12,6 +12,8 @@ import (
 
 var SourceDirNotExists = &ErrCode{Code: "5001", Msg: "source dir not exits"}
 var TargetUriEmpty = &ErrCode{Code: "5002", Msg: "target uri is empty"}
+var SourceAndTargetSame = &ErrCode{Code: "5003", Msg: "source path is the same as target uri"}
+var SourceOrTargetError = &ErrCode{Code: "5004", Msg: "source dir or target uri error"}
 var StoreNotFound = &ErrCode{Code: "10001", Msg: "store not found"}
 var StoreOpenError = &ErrCode{Code: "10002", Msg: "store open error"}
 var StoreFileNotFound = &ErrCode{Code: "10003", Msg: "store file not found"}
