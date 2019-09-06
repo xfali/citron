@@ -15,7 +15,7 @@ import (
     "strings"
 )
 
-//增量更新
+//增量备份
 func incrementalProcess(rootDir, srcDir string, trans transport.Transport, store store.MetaStore) error {
     rel := io.SubPath(srcDir, rootDir)
     metaFile := strings.Replace(rel, string(filepath.Separator), "_", -1)

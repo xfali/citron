@@ -32,7 +32,8 @@ type FileInfo struct {
 
     State int `json:"state"`
 
-    IsDir bool `json:"isDir"`
+    IsDir bool  `json:"isDir"`
+    Size  int64 `json:"size"`
 
     ModTime time.Time `json:"modTime"`
 
@@ -60,7 +61,7 @@ func (f *FileInfo) Process(other FileInfo) FileInfo {
     }
 
     if !f.Empty() && !other.Empty() {
-        if !f.ModTime.Equal(other.ModTime) {
+        if !f.ModTime.Equal(other.ModTime) || f.Size != other.Size {
             ret := other
             ret.State = Modified
             log.Debug("modify file %s", ret.FilePath)

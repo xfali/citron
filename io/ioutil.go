@@ -40,6 +40,7 @@ func GetDirFiles(path string) ([]fileinfo.FileInfo, error) {
             FilePath: filepath.Join(path, f.Name()),
             IsDir: f.IsDir(),
             ModTime: f.ModTime(),
+            Size: f.Size(),
             //default create
             State: fileinfo.Create,
         }

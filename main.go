@@ -24,6 +24,7 @@ func main() {
     checksumType := flag.String("check-type", "", "checksum type: MD5 | SHA256")
     incremental := flag.String("incr", "true", "incremental backup")
     newRepo := flag.String("n", "true", "creating a new backup repository every time")
+    sync := flag.Bool("sync", false, "synchronous transport")
     mergeSrc := flag.String("merge-src", "", "path of src merge dir")
     mergeDest := flag.String("merge-dest", "", "path of dest merge dir")
     mergeSave := flag.String("merge-save", "", "dir save merge result")
@@ -35,6 +36,7 @@ func main() {
     config.GConfig.ChecksumType = *checksumType
     config.GConfig.Incremental = *incremental == "true"
     config.GConfig.NewRepo = *newRepo == "true"
+    config.GConfig.SyncTrans = *sync
 
     log.Info("config: %s\n", config.GConfig.String())
 
@@ -74,5 +76,8 @@ func main() {
     }
     defer s.Close()
 
-    process.Process(config.GConfig.SourceDir, t, s)
+    errP := process.Process(config.GConfig.SourceDir, t, s)
+    if errP != nil {
+        log.Fatal(errP.Error())
+    }
 }

@@ -15,7 +15,7 @@ import (
     "strings"
 )
 
-//全量更新
+//全量备份
 func allProcess(rootDir, srcDir string, trans transport.Transport, store store.MetaStore) error {
     rel := io.SubPath(srcDir, rootDir)
     metaFile := strings.Replace(rel, string(filepath.Separator), "_", -1)

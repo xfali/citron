@@ -131,6 +131,7 @@ func (t *LocalFileTransport) timeStr() string {
 }
 
 func (t *LocalFileTransport) Send(info fileinfo.FileInfo) error {
+    log.Debug("Send from %s to %s", info.From, info.To)
     switch info.State {
     case fileinfo.Create, fileinfo.Modified:
         err := create(info)

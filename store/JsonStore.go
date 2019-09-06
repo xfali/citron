@@ -14,9 +14,10 @@ import (
     "io/ioutil"
     "os"
     "path/filepath"
+    "sync"
 )
 
-const(
+const (
     MetaFileName = ".meta"
 )
 
@@ -25,6 +26,7 @@ type JsonStore struct {
     file    *os.File
     root    string
     metaDir string
+    mutex   sync.Mutex
 }
 
 func NewDefaultStore() MetaStore {
@@ -41,7 +43,7 @@ func (s *JsonStore) Open(storeDir string, dir string) error {
             return err
         }
     }
-    s.metaDir= filepath.Clean(metaPath)
+    s.metaDir = filepath.Clean(metaPath)
     s.root = filepath.Clean(dir)
 
     return nil
@@ -49,7 +51,7 @@ func (s *JsonStore) Open(storeDir string, dir string) error {
 
 func (s *JsonStore) resetData(filename string) error {
     //close at first
-    s.Close()
+    s.innerClose()
 
     filename += MetaFileName
 
@@ -80,6 +82,9 @@ func (s *JsonStore) resetData(filename string) error {
 }
 
 func (s *JsonStore) Insert(info fileinfo.FileInfo) error {
+    s.mutex.Lock()
+    defer s.mutex.Unlock()
+
     i := s.find(info.FilePath)
     if i != -1 {
         return s.update(i, info)
@@ -89,6 +94,9 @@ func (s *JsonStore) Insert(info fileinfo.FileInfo) error {
 }
 
 func (s *JsonStore) Update(info fileinfo.FileInfo) error {
+    s.mutex.Lock()
+    defer s.mutex.Unlock()
+
     i := s.find(info.FilePath)
     if i == -1 {
         return s.insert(info)
@@ -117,6 +125,9 @@ func (s *JsonStore) find(filepath string) int {
 }
 
 func (s *JsonStore) Read(uri string) error {
+    s.mutex.Lock()
+    defer s.mutex.Unlock()
+
     err := s.resetData(uri)
     if err != nil {
         return err
@@ -126,10 +137,16 @@ func (s *JsonStore) Read(uri string) error {
 }
 
 func (s *JsonStore) Query() ([]fileinfo.FileInfo, error) {
+    s.mutex.Lock()
+    defer s.mutex.Unlock()
+
     return s.data, nil
 }
 
 func (s *JsonStore) QueryByPath(uri string) (fileinfo.FileInfo, error) {
+    s.mutex.Lock()
+    defer s.mutex.Unlock()
+
     i := s.find(uri)
     if i == -1 {
         return fileinfo.FileInfo{}, nil
@@ -138,6 +155,9 @@ func (s *JsonStore) QueryByPath(uri string) (fileinfo.FileInfo, error) {
 }
 
 func (s *JsonStore) Delete(info fileinfo.FileInfo) error {
+    s.mutex.Lock()
+    defer s.mutex.Unlock()
+
     i := s.find(info.FilePath)
     if i == -1 {
         return nil
@@ -148,6 +168,20 @@ func (s *JsonStore) Delete(info fileinfo.FileInfo) error {
 }
 
 func (s *JsonStore) Save() error {
+    s.mutex.Lock()
+    defer s.mutex.Unlock()
+
+    return s.innerSave()
+}
+
+func (s *JsonStore) Close() error {
+    s.mutex.Lock()
+    defer s.mutex.Unlock()
+
+    return s.innerClose()
+}
+
+func (s *JsonStore) innerSave() error {
     if s.file != nil && len(s.data) > 0 {
         b, err := json.Marshal(s.data)
         if err != nil {
@@ -162,8 +196,8 @@ func (s *JsonStore) Save() error {
     return nil
 }
 
-func (s *JsonStore) Close() error {
-    s.Save()
+func (s *JsonStore) innerClose() error {
+    s.innerSave()
     s.data = []fileinfo.FileInfo{}
     if s.file != nil {
         err := s.file.Close()
