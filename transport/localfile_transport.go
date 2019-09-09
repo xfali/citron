@@ -7,8 +7,9 @@
 package transport
 
 import (
-    "errors"
+    "fbt/checksum"
     "fbt/config"
+    "fbt/errors"
     "fbt/fileinfo"
     "fbt/history"
     myio "fbt/io"
@@ -106,7 +107,7 @@ func (t *LocalFileTransport) prepareBackupDir() error {
     dir = filepath.Join(t.target, dir)
     if io.IsPathExists(dir) {
         if t.newRepo {
-            return errors.New("backup dir exists! ")
+            return errors.TransportBackupDirError
         }
     } else {
         io.Mkdir(dir)
@@ -131,16 +132,16 @@ func (t *LocalFileTransport) timeStr() string {
 }
 
 func (t *LocalFileTransport) Send(info fileinfo.FileInfo) error {
-    log.Debug("Send from %s to %s", info.From, info.To)
+    log.Info("Send from %s to %s", info.From, info.To)
     switch info.State {
     case fileinfo.Create, fileinfo.Modified:
-        err := create(info)
+        err := create(&info)
         if err != nil {
             return err
         }
         break
     case fileinfo.Deleted:
-        err := remove(info)
+        err := remove(&info)
         if err != nil {
             return err
         }
@@ -149,25 +150,38 @@ func (t *LocalFileTransport) Send(info fileinfo.FileInfo) error {
     return t.store.Insert(info)
 }
 
-func remove(info fileinfo.FileInfo) error {
+func remove(info *fileinfo.FileInfo) error {
     path := GetPath(info.To)
     if io.IsPathExists(path) {
         if info.IsDir {
-            return os.RemoveAll(path)
+            err := os.RemoveAll(path)
+            if err != nil {
+                return err
+            }
         } else {
-            return os.Remove(path)
+            err := os.Remove(path)
+            if err != nil {
+                return err
+            }
         }
     } else {
         log.Info("file not found %s", path)
     }
+    info.FilePath = ""
     return nil
 }
 
-func create(info fileinfo.FileInfo) error {
+func create(info *fileinfo.FileInfo) error {
     src := GetPath(info.From)
     dest := GetPath(info.To)
     if info.IsDir {
-        return io.Mkdir(dest)
+        //FIXME: unnecessary
+        err := io.Mkdir(dest)
+        if err != nil {
+            return err
+        }
+        info.FilePath = dest
+        return nil
     } else {
         dir := filepath.Dir(dest)
         if !io.IsPathExists(dir) {
@@ -175,8 +189,33 @@ func create(info fileinfo.FileInfo) error {
                 return err
             }
         }
-        return myio.CopyFile(src, dest)
+        err := myio.CopyFile(src, dest)
+        if err != nil {
+            return err
+        }
+
+        errC := checkFile(*info, dest)
+        if errC != nil {
+            return errC
+        }
+
+        info.FilePath = dest
+        return nil
     }
+}
+
+func checkFile(info fileinfo.FileInfo, targetFile string) error {
+    if info.Checksum != "" && info.ChecksumType != "" {
+        hash := checksum.New(info.ChecksumType)
+        sum, err := checksum.GetFileCheckSum(hash, targetFile)
+        if err != nil {
+            return err
+        }
+        if sum != info.Checksum {
+            return errors.TransportChecksumNotMatch
+        }
+    }
+    return nil
 }
 
 func (t *LocalFileTransport) GetUri(relDir, file string) (uri.URI, error) {

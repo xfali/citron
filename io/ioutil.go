@@ -7,6 +7,8 @@
 package io
 
 import (
+    "fbt/checksum"
+    "fbt/config"
     "fbt/fileinfo"
     "fmt"
     "io"
@@ -35,14 +37,26 @@ func GetDirFiles(path string) ([]fileinfo.FileInfo, error) {
     ret := make([]fileinfo.FileInfo, len(finfos))
     i := 0
     for _, f := range finfos {
+        filePath := filepath.Join(path, f.Name())
+        ct, cs := "", ""
+        if !f.IsDir() {
+            ct = config.GConfig.ChecksumType
+            cs, err = checksum.GetFileCheckSum(checksum.Get(), filePath)
+            if err != nil {
+                return nil, err
+            }
+        }
+
         info := fileinfo.FileInfo{
             FileName: f.Name(),
-            FilePath: filepath.Join(path, f.Name()),
-            IsDir: f.IsDir(),
-            ModTime: f.ModTime(),
-            Size: f.Size(),
+            FilePath: filePath,
+            IsDir:    f.IsDir(),
+            ModTime:  f.ModTime(),
+            Size:     f.Size(),
             //default create
-            State: fileinfo.Create,
+            State:        fileinfo.Create,
+            ChecksumType: ct,
+            Checksum:     cs,
         }
         ret[i] = info
         i++

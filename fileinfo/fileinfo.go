@@ -19,8 +19,8 @@ const (
 )
 
 const (
-    MD5    = "MD5"
-    SHA256 = "SHA256"
+    MD5  = "MD5"
+    SHA1 = "SHA1"
 )
 
 type FileInfo struct {

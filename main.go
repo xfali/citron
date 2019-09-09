@@ -7,6 +7,7 @@
 package main
 
 import (
+    "fbt/checksum"
     "fbt/config"
     "fbt/errors"
     "fbt/merge"
@@ -22,7 +23,7 @@ import (
 func main() {
     sourceDir := flag.String("s", "", "source dir")
     destUri := flag.String("d", "", "dest uri")
-    checksumType := flag.String("check-type", "", "checksum type: MD5 | SHA256")
+    checksumType := flag.String("checksum", "", "checksum type: MD5 | SHA1")
     incremental := flag.String("incr", "true", "incremental backup")
     newRepo := flag.String("n", "true", "creating a new backup repository every time")
     sync := flag.Bool("sync", false, "synchronous transport")
@@ -40,6 +41,8 @@ func main() {
     config.GConfig.SyncTrans = *sync
 
     log.Info("config: %s\n", config.GConfig.String())
+
+    checksum.Select(config.GConfig.ChecksumType)
 
     if *mergeDest != "" || *mergeSrc != "" || *mergeSave != "" {
         if *mergeDest == "" || *mergeSrc == "" || *mergeSave == "" {
