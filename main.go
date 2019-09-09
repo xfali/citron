@@ -7,7 +7,6 @@
 package main
 
 import (
-    "fbt/checksum"
     "fbt/config"
     "fbt/errors"
     "fbt/merge"
@@ -41,8 +40,6 @@ func main() {
     config.GConfig.SyncTrans = *sync
 
     log.Info("config: %s\n", config.GConfig.String())
-
-    checksum.Select(config.GConfig.ChecksumType)
 
     if *mergeDest != "" || *mergeSrc != "" || *mergeSave != "" {
         if *mergeDest == "" || *mergeSrc == "" || *mergeSave == "" {

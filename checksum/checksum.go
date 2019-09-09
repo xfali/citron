@@ -10,6 +10,7 @@ import (
     "crypto/md5"
     "crypto/sha1"
     "encoding/hex"
+    "fbt/config"
     "fbt/fileinfo"
     "github.com/xfali/goutils/log"
     "hash"
@@ -18,7 +19,6 @@ import (
 )
 
 var gDummyHash DummyHash = ""
-var defaultHash hash.Hash = &gDummyHash
 
 func New(typename string) hash.Hash {
     switch typename {
@@ -30,13 +30,8 @@ func New(typename string) hash.Hash {
     return &gDummyHash
 }
 
-func Select(typename string) {
-    defaultHash = New(typename)
-}
-
 func Get() hash.Hash {
-    defaultHash.Reset()
-    return defaultHash
+    return New(config.GConfig.ChecksumType)
 }
 
 func Format(sum []byte) string {
