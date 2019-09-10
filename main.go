@@ -41,6 +41,7 @@ func main() {
     config.GConfig.SyncTrans = *sync
 
     log.Info("config: %s\n", config.GConfig.String())
+    log.Level = log.WARN
 
     if *mergeDest != "" || *mergeSrc != "" || *mergeSave != "" {
         if *mergeDest == "" || *mergeSrc == "" || *mergeSave == "" {
@@ -74,6 +75,8 @@ func main() {
     defer s.Close()
 
     errP := process.Process(config.GConfig.SourceDir, t, s, st)
+
+    log.Level = log.INFO
     log.Info(st.String())
     if errP != nil {
         log.Fatal(errP.Error())

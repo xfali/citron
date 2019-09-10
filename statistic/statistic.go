@@ -9,7 +9,6 @@ package statistic
 import (
     "fbt/fileinfo"
     "fmt"
-    "github.com/xfali/goutils/log"
     "sync"
     "sync/atomic"
     "time"
@@ -22,6 +21,10 @@ const (
     GB = 1024 * MB
 )
 
+type Listener interface {
+    OnWrite(int64, int64)
+}
+
 type Statistic struct {
     startTime time.Time
     totalSize int64
@@ -30,6 +33,7 @@ type Statistic struct {
     writeSize int64
     failList  []fileinfo.FileInfo
     mutex     sync.Mutex
+    listeners []Listener
 }
 
 func New() *Statistic {
@@ -42,6 +46,16 @@ func (s *Statistic) ResetTime() {
     s.startTime = time.Now()
 }
 
+func (s *Statistic) AddListener(l Listener) {
+    s.listeners = append(s.listeners, l)
+}
+
+func (s *Statistic) notifyWrite() {
+    for _, l := range s.listeners {
+        l.OnWrite(s.writeSize, s.totalSize)
+    }
+}
+
 func (s *Statistic) AddTotalSize(delta int64) int64 {
     return logAdd("AddTotalSize", &s.totalSize, delta)
 }
@@ -51,11 +65,26 @@ func (s *Statistic) AddFileCount(delta int64) int64 {
 }
 
 func (s *Statistic) AddReadSize(delta int64) int64 {
-    return logAdd("AddReadSize", &s.readSize, delta)
+    ret := atomic.AddInt64(&s.readSize, delta)
+    return ret
 }
 
 func (s *Statistic) AddWriteSize(delta int64) int64 {
-    return logAdd("AddWriteSize", &s.writeSize, delta)
+    ret := atomic.AddInt64(&s.writeSize, delta)
+    s.notifyWrite()
+    return ret
+}
+
+func (s *Statistic) ReadSize() int64 {
+    return s.readSize
+}
+
+func (s *Statistic) WriteSize() int64 {
+    return s.writeSize
+}
+
+func (s *Statistic) TotalSize() int64 {
+    return s.totalSize
 }
 
 func logAdd(tag string, addr *int64, delta int64) int64 {
@@ -92,7 +121,6 @@ func (s *Statistic) ReadRate(sizeMeasure int64, timeMeasure time.Duration) float
         timeMeasure = 1
     }
     useTime := time.Since(s.startTime)
-    log.Debug("time : %d size %d", useTime, s.readSize)
     return float64(s.readSize) / float64(useTime) * float64(timeMeasure) / float64(sizeMeasure)
 }
 
@@ -105,7 +133,6 @@ func (s *Statistic) WriteRate(sizeMeasure int64, timeMeasure time.Duration) floa
         timeMeasure = 1
     }
     useTime := time.Since(s.startTime)
-    log.Debug("time : %d size %d", useTime, s.writeSize)
     return float64(s.writeSize) / float64(useTime) * float64(timeMeasure) / float64(sizeMeasure)
 }
 

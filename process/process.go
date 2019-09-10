@@ -7,6 +7,7 @@
 package process
 
 import (
+    "fbt/cmd"
     "fbt/config"
     "fbt/fileinfo"
     "fbt/io"
@@ -14,6 +15,7 @@ import (
     "fbt/store"
     "fbt/transport"
     "fbt/uri"
+    "github.com/xfali/executor"
     "github.com/xfali/goutils/log"
     "path/filepath"
     "sync"
@@ -49,6 +51,10 @@ func Process(srcDir string, trans transport.Transport, store store.MetaStore, st
             return err
         }
     }
+
+    p := cmd.NewProgress(statis)
+    p.Start()
+    defer p.Stop()
 
     var err error
     if len(diffFile) > 0 {
@@ -135,9 +141,13 @@ func asyncProcessDiff(
     size := len(result)
     var wg sync.WaitGroup
     wg.Add(size)
+
+    exec := executor.NewFixedExecutor(4, size - 4)
+    defer exec.Stop()
+
     for i := range result {
         index := i
-        go func() {
+        err := exec.Run(func() {
             defer wg.Done()
 
             relDir := io.SubPath(filepath.Dir(result[index].FilePath), root)
@@ -151,7 +161,10 @@ func asyncProcessDiff(
             }
             result[index].To = uri
             log.Debug("diff file : %v", result[index])
-        }()
+        }, 0, nil)
+        if err != nil {
+            return err
+        }
     }
     wg.Wait()
 
@@ -159,7 +172,7 @@ func asyncProcessDiff(
     wg.Add(size)
     for i := range result {
         index := i
-        go func() {
+        err := exec.Run(func() {
             defer wg.Done()
             if result[index].To == "" {
                 return
@@ -176,7 +189,10 @@ func asyncProcessDiff(
                 log.Error(errSave.Error())
                 return
             }
-        }()
+        }, 0, nil)
+        if err != nil {
+            return err
+        }
     }
     wg.Wait()
     return nil
