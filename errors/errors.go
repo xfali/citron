@@ -20,7 +20,8 @@ var StoreFileNotFound = &ErrCode{Code: "10003", Msg: "store file not found"}
 var TransportNotFound = &ErrCode{Code: "20001", Msg: "transport not found"}
 var TransportOpenError = &ErrCode{Code: "20002", Msg: "transport open error"}
 var TransportChecksumNotMatch = &ErrCode{Code: "20003", Msg: "transport checksum not match"}
-var TransportBackupDirError = &ErrCode{Code: "20003", Msg: "backup dir exists!"}
+var TransportBackupDirError = &ErrCode{Code: "20004", Msg: "backup dir exists!"}
+var TransportReadSourceFileError = &ErrCode{Code: "20005", Msg: "transport read source file error"}
 var MergeInfoNotFound = &ErrCode{Code: "30001", Msg: "merge dir not found info files"}
 
 type ErrCode struct {

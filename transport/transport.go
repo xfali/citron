@@ -12,8 +12,13 @@ import (
     "time"
 )
 
+type Listener interface {
+    AddReadSize(int64) int64
+    AddWriteSize(int64) int64
+}
+
 type Transport interface {
-    Open(uri string, incremental, newRepo bool, timestamp time.Time) error
+    Open(uri string, incremental, newRepo bool, timestamp time.Time, listener Listener) error
     GetUri(relDir, file string) (uri.URI, error)
     Send(info fileinfo.FileInfo) error
     Close() error

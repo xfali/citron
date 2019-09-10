@@ -9,6 +9,7 @@ package process
 import (
     "fbt/config"
     "fbt/fileinfo"
+    "fbt/statistic"
     "fbt/store"
     "fbt/transport"
     "fbt/uri"
@@ -16,15 +17,57 @@ import (
     "sync"
 )
 
-func Process(srcDir string, trans transport.Transport, store store.MetaStore) error {
+type ProcFunc func(string, []fileinfo.FileInfo) error
+
+func Process(srcDir string, trans transport.Transport, store store.MetaStore, statis *statistic.Statistic) error {
+    statisticFunc := func(relDir string, result []fileinfo.FileInfo) error {
+        if len(result) > 0 {
+            for _, info := range result {
+                if !info.IsDir {
+                    statis.AddFileCount(1)
+                    statis.AddTotalSize(info.Size)
+                }
+            }
+        }
+
+        return nil
+    }
+
+    trancFunc := func(relDir string, result []fileinfo.FileInfo) error {
+        var err error
+        if len(result) > 0 {
+            if config.GConfig.SyncTrans {
+                err = syncProcessDiff(relDir, result, trans, store, statis)
+            } else {
+                err = asyncProcessDiff(relDir, result, trans, store, statis)
+            }
+            if err != nil {
+                return err
+            }
+            store.Save()
+        }
+
+        return nil
+    }
+
     if config.GConfig.Incremental {
-        return incrementalProcess(srcDir, srcDir, trans, store)
+        err := incrementalProcess(srcDir, srcDir, store, statisticFunc)
+        if err != nil {
+            return err
+        }
+        statis.ResetTime()
+        return incrementalProcess(srcDir, srcDir, store, trancFunc)
     } else {
-        return allProcess(srcDir, srcDir, trans, store)
+        err := allProcess(srcDir, srcDir, store, statisticFunc)
+        if err != nil {
+            return err
+        }
+        statis.ResetTime()
+        return allProcess(srcDir, srcDir, store, trancFunc)
     }
 }
 
-func process(list1, list2 []fileinfo.FileInfo, result *[]fileinfo.FileInfo, reverse bool) {
+func findDiffFiles(list1, list2 []fileinfo.FileInfo, result *[]fileinfo.FileInfo, reverse bool) {
     for _, info := range list1 {
         found := false
         for _, file := range list2 {
@@ -49,28 +92,18 @@ func process(list1, list2 []fileinfo.FileInfo, result *[]fileinfo.FileInfo, reve
     }
 }
 
-func processDiff(relDir string, result []fileinfo.FileInfo, trans transport.Transport, mstore store.MetaStore) (err error) {
-    if len(result) > 0 {
-        if config.GConfig.SyncTrans {
-            err = syncProcessDiff(relDir, result, trans, mstore)
-        } else {
-            err = asyncProcessDiff(relDir, result, trans, mstore)
-        }
-        if err != nil {
-            return err
-        }
-        mstore.Save()
-    }
-
-    return nil
-}
-
-func syncProcessDiff(relDir string, result []fileinfo.FileInfo, trans transport.Transport, mstore store.MetaStore) error {
+func syncProcessDiff(
+    relDir string,
+    result []fileinfo.FileInfo,
+    trans transport.Transport,
+    mstore store.MetaStore,
+    statis *statistic.Statistic) error {
     //prepare
     for i := range result {
         result[i].From = uri.Get(uri.File, result[i].FilePath)
         uri, err := trans.GetUri(relDir, result[i].FileName)
         if err != nil {
+            statis.AddFailedFile(result[i])
             return err
         }
         result[i].To = uri
@@ -80,6 +113,7 @@ func syncProcessDiff(relDir string, result []fileinfo.FileInfo, trans transport.
     for i := range result {
         err := trans.Send(result[i])
         if err != nil {
+            statis.AddFailedFile(result[i])
             return err
         }
 
@@ -91,7 +125,12 @@ func syncProcessDiff(relDir string, result []fileinfo.FileInfo, trans transport.
     return nil
 }
 
-func asyncProcessDiff(relDir string, result []fileinfo.FileInfo, trans transport.Transport, mstore store.MetaStore) error {
+func asyncProcessDiff(
+    relDir string,
+    result []fileinfo.FileInfo,
+    trans transport.Transport,
+    mstore store.MetaStore,
+    statis *statistic.Statistic) error {
     //prepare
     size := len(result)
     var wg sync.WaitGroup
@@ -106,6 +145,7 @@ func asyncProcessDiff(relDir string, result []fileinfo.FileInfo, trans transport
             if err != nil {
                 result[index].To = ""
                 log.Error(err.Error())
+                statis.AddFailedFile(result[index])
                 return
             }
             result[index].To = uri
@@ -126,6 +166,7 @@ func asyncProcessDiff(relDir string, result []fileinfo.FileInfo, trans transport
             err := trans.Send(result[index])
             if err != nil {
                 log.Error(err.Error())
+                statis.AddFailedFile(result[index])
                 return
             }
 

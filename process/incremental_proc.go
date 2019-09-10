@@ -10,13 +10,12 @@ import (
     "fbt/fileinfo"
     "fbt/io"
     "fbt/store"
-    "fbt/transport"
     "path/filepath"
     "strings"
 )
 
 //增量备份
-func incrementalProcess(rootDir, srcDir string, trans transport.Transport, store store.MetaStore) error {
+func incrementalProcess(rootDir, srcDir string, store store.MetaStore, proc ProcFunc) error {
     rel := io.SubPath(srcDir, rootDir)
     metaFile := strings.Replace(rel, string(filepath.Separator), "_", -1)
     if metaFile == "" {
@@ -38,10 +37,10 @@ func incrementalProcess(rootDir, srcDir string, trans transport.Transport, store
         return err
     }
     var result []fileinfo.FileInfo
-    process(allInfo, files, &result, false)
-    process(files, allInfo, &result, true)
+    findDiffFiles(allInfo, files, &result, false)
+    findDiffFiles(files, allInfo, &result, true)
 
-    errDiff := processDiff(rel, result, trans, store)
+    errDiff := proc(rel, result)
     if errDiff != nil {
         return errDiff
     }
@@ -49,7 +48,7 @@ func incrementalProcess(rootDir, srcDir string, trans transport.Transport, store
     for _, dir := range files {
         if dir.IsDir {
             if dir.State == fileinfo.Create || dir.State == fileinfo.Modified {
-                err := incrementalProcess(rootDir, dir.FilePath, trans, store)
+                err := incrementalProcess(rootDir, dir.FilePath, store, proc)
                 if err != nil {
                     return err
                 }

@@ -11,6 +11,7 @@ import (
     "fbt/errors"
     "fbt/merge"
     "fbt/process"
+    "fbt/statistic"
     "fbt/store"
     "fbt/transport"
     "flag"
@@ -53,11 +54,13 @@ func main() {
 
     checkResource()
 
+    st := statistic.New()
     t, err := transport.Open(
         "file",
         config.GConfig.DestUri,
         config.GConfig.Incremental,
-        config.GConfig.NewRepo)
+        config.GConfig.NewRepo,
+        st)
     if err != nil {
         log.Fatal(err.Error())
     }
@@ -71,7 +74,7 @@ func main() {
     }
     defer s.Close()
 
-    errP := process.Process(config.GConfig.SourceDir, t, s)
+    errP := process.Process(config.GConfig.SourceDir, t, s, st)
     if errP != nil {
         log.Fatal(errP.Error())
     }

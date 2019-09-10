@@ -62,6 +62,9 @@ func (f *FileInfo) Process(other FileInfo) FileInfo {
 
     if !f.Empty() && !other.Empty() {
         if !f.ModTime.Equal(other.ModTime) || f.Size != other.Size {
+            if f.checksumEqual(other) {
+                return FileInfo{}
+            }
             ret := other
             ret.State = Modified
             log.Debug("modify file %s", ret.FilePath)
@@ -70,6 +73,32 @@ func (f *FileInfo) Process(other FileInfo) FileInfo {
     }
 
     return FileInfo{}
+}
+
+func (f *FileInfo) checksumEqual(other FileInfo) bool {
+    if f.IsDir {
+        return true
+    }
+    if f.ChecksumType != "" {
+        if other.ChecksumType == "" {
+            return false
+        } else {
+            if f.ChecksumType != other.ChecksumType {
+                return false
+            }
+        }
+    }
+
+    if f.Checksum != "" {
+        if other.Checksum == "" {
+            return false
+        } else {
+            if f.Checksum != other.Checksum {
+                return false
+            }
+        }
+    }
+    return true
 }
 
 func (f *FileInfo) Empty() bool {
