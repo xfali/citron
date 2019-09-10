@@ -8,14 +8,13 @@ package cmd
 
 import (
     "fbt/statistic"
-    "fmt"
     "github.com/schollz/progressbar/v2"
     "sync/atomic"
     "time"
 )
 
 type Progress struct {
-    current  int32
+    current  int64
     bar      *progressbar.ProgressBar
     stopChan chan bool
     st       *statistic.Statistic
@@ -24,13 +23,12 @@ type Progress struct {
 func NewProgress(st *statistic.Statistic) *Progress {
     r := &Progress{
         current: 0,
-        bar: progressbar.NewOptions(
-            100,
+        bar: progressbar.NewOptions64(
+            st.TotalSize(),
             progressbar.OptionSetDescription("备份进度"),
             progressbar.OptionEnableColorCodes(true),
-            progressbar.OptionOnCompletion(func() {
-                fmt.Println()
-            })),
+            progressbar.OptionSetBytes64(st.TotalSize()),
+            progressbar.OptionClearOnFinish()),
         stopChan: make(chan bool),
         st: st,
     }
@@ -58,12 +56,17 @@ func (p *Progress) Stop() {
 }
 
 func (p *Progress) move() {
-    cur := int32(p.st.WriteSize() * 100 / p.st.TotalSize())
-    tmp := atomic.LoadInt32(&p.current)
-    if cur > tmp {
-       if atomic.CompareAndSwapInt32(&p.current, tmp, cur) {
-           p.bar.Add(int(cur - tmp))
-       }
+    //cur := int32(p.st.WriteSize() * 100 / p.st.TotalSize())
+    //tmp := atomic.LoadInt32(&p.current)
+    //if cur > tmp {
+    //   if atomic.CompareAndSwapInt32(&p.current, tmp, cur) {
+    //       p.bar.Add(int(cur - tmp))
+    //   }
+    //}
+    cur := p.st.WriteSize() - atomic.LoadInt64(&p.current)
+    if cur > 0 {
+        p.bar.Add64(cur)
+        atomic.StoreInt64(&p.current, p.st.WriteSize())
     }
 }
 
