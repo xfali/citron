@@ -9,20 +9,25 @@ package process
 import (
     "fbt/config"
     "fbt/fileinfo"
+    "fbt/io"
     "fbt/statistic"
     "fbt/store"
     "fbt/transport"
     "fbt/uri"
     "github.com/xfali/goutils/log"
+    "path/filepath"
     "sync"
 )
 
-type ProcFunc func(string, []fileinfo.FileInfo) error
+type ProcFunc func([]fileinfo.FileInfo) error
 
 func Process(srcDir string, trans transport.Transport, store store.MetaStore, statis *statistic.Statistic) error {
-    statisticFunc := func(relDir string, result []fileinfo.FileInfo) error {
+    srcDir = filepath.Clean(srcDir)
+    var diffFile []fileinfo.FileInfo
+    statisticFunc := func(result []fileinfo.FileInfo) error {
         if len(result) > 0 {
             for _, info := range result {
+                diffFile = append(diffFile, info)
                 if !info.IsDir {
                     statis.AddFileCount(1)
                     statis.AddTotalSize(info.Size)
@@ -33,38 +38,32 @@ func Process(srcDir string, trans transport.Transport, store store.MetaStore, st
         return nil
     }
 
-    trancFunc := func(relDir string, result []fileinfo.FileInfo) error {
-        var err error
-        if len(result) > 0 {
-            if config.GConfig.SyncTrans {
-                err = syncProcessDiff(relDir, result, trans, store, statis)
-            } else {
-                err = asyncProcessDiff(relDir, result, trans, store, statis)
-            }
-            if err != nil {
-                return err
-            }
-            store.Save()
-        }
-
-        return nil
-    }
-
     if config.GConfig.Incremental {
-        err := incrementalProcess(srcDir, srcDir, store, statisticFunc)
+        err := incrementalProcess(srcDir, store, statisticFunc)
         if err != nil {
             return err
         }
-        statis.ResetTime()
-        return incrementalProcess(srcDir, srcDir, store, trancFunc)
     } else {
-        err := allProcess(srcDir, srcDir, store, statisticFunc)
+        err := allProcess(srcDir, store, statisticFunc)
         if err != nil {
             return err
         }
-        statis.ResetTime()
-        return allProcess(srcDir, srcDir, store, trancFunc)
     }
+
+    var err error
+    if len(diffFile) > 0 {
+        if config.GConfig.SyncTrans {
+            err = syncProcessDiff(srcDir, diffFile, trans, store, statis)
+        } else {
+            err = asyncProcessDiff(srcDir, diffFile, trans, store, statis)
+        }
+        if err != nil {
+            return err
+        }
+        store.Save()
+    }
+
+    return nil
 }
 
 func findDiffFiles(list1, list2 []fileinfo.FileInfo, result *[]fileinfo.FileInfo, reverse bool) {
@@ -93,13 +92,14 @@ func findDiffFiles(list1, list2 []fileinfo.FileInfo, result *[]fileinfo.FileInfo
 }
 
 func syncProcessDiff(
-    relDir string,
+    root string,
     result []fileinfo.FileInfo,
     trans transport.Transport,
     mstore store.MetaStore,
     statis *statistic.Statistic) error {
     //prepare
     for i := range result {
+        relDir := io.SubPath(root, filepath.Dir(result[i].FilePath))
         result[i].From = uri.Get(uri.File, result[i].FilePath)
         uri, err := trans.GetUri(relDir, result[i].FileName)
         if err != nil {
@@ -126,7 +126,7 @@ func syncProcessDiff(
 }
 
 func asyncProcessDiff(
-    relDir string,
+    root string,
     result []fileinfo.FileInfo,
     trans transport.Transport,
     mstore store.MetaStore,
@@ -140,6 +140,7 @@ func asyncProcessDiff(
         go func() {
             defer wg.Done()
 
+            relDir := io.SubPath(filepath.Dir(result[index].FilePath), root)
             result[index].From = uri.Get(uri.File, result[index].FilePath)
             uri, err := trans.GetUri(relDir, result[index].FileName)
             if err != nil {

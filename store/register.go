@@ -15,9 +15,9 @@ var StoreCache = map[string]MetaStore{
     "file": NewDefaultStore(),
 }
 
-func Open(storeType, storeUri, dataDir string) (MetaStore, error) {
+func Open(storeType, storeUri string) (MetaStore, error) {
     if s, ok := StoreCache[storeType]; ok {
-        err := s.Open(storeUri, dataDir)
+        err := s.Open(storeUri)
         if err != nil {
             log.Warn(errors.StoreOpenError.Error())
             return nil, err

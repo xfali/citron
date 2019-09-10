@@ -18,28 +18,18 @@ func Merge(src, dest, save string) (err error) {
     destPath := filepath.Join(dest, config.InfoDir)
 
     srcStore := store.NewDefaultStore()
-    err = srcStore.Open(srcPath, src)
+    err = srcStore.Open(srcPath)
     if err != nil {
         return errors.MergeInfoNotFound
     }
     defer srcStore.Close()
-
-    err = srcStore.Read(src)
-    if err != nil {
-        return errors.MergeInfoNotFound
-    }
 
     destStore := store.NewDefaultStore()
-    err = destStore.Open(destPath, dest)
+    err = destStore.Open(destPath)
     if err != nil {
         return errors.MergeInfoNotFound
     }
     defer srcStore.Close()
-
-    err = destStore.Read(dest)
-    if err != nil {
-        return errors.MergeInfoNotFound
-    }
 
     return nil
 }

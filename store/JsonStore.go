@@ -22,11 +22,10 @@ const (
 )
 
 type JsonStore struct {
-    data    []fileinfo.FileInfo
-    file    *os.File
-    root    string
-    metaDir string
-    mutex   sync.Mutex
+    data     []fileinfo.FileInfo
+    file     *os.File
+    filePath string
+    mutex    sync.Mutex
 }
 
 func NewDefaultStore() MetaStore {
@@ -34,8 +33,8 @@ func NewDefaultStore() MetaStore {
     return &i
 }
 
-func (s *JsonStore) Open(storeDir string, dir string) error {
-    metaPath := storeDir
+func (s *JsonStore) Open(filePath string) error {
+    metaPath := filepath.Dir(filePath)
     if !utilio.IsPathExists(metaPath) {
         err := utilio.Mkdir(metaPath)
         utilio.SetInvisible(metaPath)
@@ -43,21 +42,17 @@ func (s *JsonStore) Open(storeDir string, dir string) error {
             return err
         }
     }
-    s.metaDir = filepath.Clean(metaPath)
-    s.root = filepath.Clean(dir)
+    s.filePath = filepath.Clean(filePath)
 
-    return nil
+    return s.resetData(filePath)
 }
 
-func (s *JsonStore) resetData(filename string) error {
+func (s *JsonStore) resetData(filePath string) error {
     //close at first
     s.innerClose()
 
-    filename += MetaFileName
-
-    path := filepath.Join(s.metaDir, filename)
-    if utilio.IsPathExists(path) {
-        file, err := os.OpenFile(path, os.O_RDONLY, 0644)
+    if utilio.IsPathExists(filePath) {
+        file, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
         if err != nil {
             return err
         }
@@ -72,7 +67,7 @@ func (s *JsonStore) resetData(filename string) error {
             s.data = ret
         }
     }
-    file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+    file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
     if err != nil {
         return err
     }
@@ -124,18 +119,6 @@ func (s *JsonStore) find(filepath string) int {
     return -1
 }
 
-func (s *JsonStore) Read(uri string) error {
-    s.mutex.Lock()
-    defer s.mutex.Unlock()
-
-    err := s.resetData(uri)
-    if err != nil {
-        return err
-    }
-
-    return nil
-}
-
 func (s *JsonStore) Query() ([]fileinfo.FileInfo, error) {
     s.mutex.Lock()
     defer s.mutex.Unlock()
@@ -143,15 +126,17 @@ func (s *JsonStore) Query() ([]fileinfo.FileInfo, error) {
     return s.data, nil
 }
 
-func (s *JsonStore) QueryByPath(uri string) (fileinfo.FileInfo, error) {
+func (s *JsonStore) QueryByPath(uri string) ([]fileinfo.FileInfo, error) {
     s.mutex.Lock()
     defer s.mutex.Unlock()
 
-    i := s.find(uri)
-    if i == -1 {
-        return fileinfo.FileInfo{}, nil
+    var ret []fileinfo.FileInfo
+    for i := range s.data {
+        if s.data[i].Parent == uri {
+            ret = append(ret, s.data[i])
+        }
     }
-    return s.data[i], nil
+    return ret, nil
 }
 
 func (s *JsonStore) Delete(info fileinfo.FileInfo) error {

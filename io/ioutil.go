@@ -50,6 +50,7 @@ func GetDirFiles(path string) ([]fileinfo.FileInfo, error) {
         info := fileinfo.FileInfo{
             FileName: f.Name(),
             FilePath: filePath,
+            Parent:   path,
             IsDir:    f.IsDir(),
             ModTime:  f.ModTime(),
             Size:     f.Size(),

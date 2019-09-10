@@ -8,10 +8,18 @@ package statistic
 
 import (
     "fbt/fileinfo"
+    "fmt"
     "github.com/xfali/goutils/log"
     "sync"
     "sync/atomic"
     "time"
+)
+
+const (
+    B = 1
+    KB = 1024
+    MB = 1024 * KB
+    GB = 1024 * MB
 )
 
 type Statistic struct {
@@ -52,8 +60,13 @@ func (s *Statistic) AddWriteSize(delta int64) int64 {
 
 func logAdd(tag string, addr *int64, delta int64) int64 {
     ret := atomic.AddInt64(addr, delta)
-    log.Debug("%s: size %d", tag, ret)
+    //log.Debug("%s: size %d", tag, ret)
     return ret
+}
+
+func (s *Statistic) String() string {
+    return fmt.Sprintf("Statistic info - Total Size: %d , Total File Count: %d , Read Rate: %.2f MB/S Write Rate: %.2f MB/S, Read: %d , Write: %d , Use time: %d ms",
+        s.totalSize, s.totalFile, s.ReadRate(MB, time.Second),s.WriteRate(MB, time.Second), s.readSize, s.writeSize, time.Since(s.startTime)/time.Millisecond)
 }
 
 func (s *Statistic) AddFailedFile(file fileinfo.FileInfo) {
@@ -70,33 +83,50 @@ func (s *Statistic) GetFailedFile() []fileinfo.FileInfo {
     return s.failList
 }
 
-//每秒读取速度
-func (s *Statistic) ReadRate() int64 {
-    return s.readSize / (int64(time.Since(s.startTime)) / int64(time.Second))
+//每毫秒读取速度
+func (s *Statistic) ReadRate(sizeMeasure int64, timeMeasure time.Duration) float64 {
+    if sizeMeasure <= 0 {
+        sizeMeasure = 1
+    }
+    if timeMeasure <= 0 {
+        timeMeasure = 1
+    }
+    useTime := time.Since(s.startTime)
+    log.Debug("time : %d size %d", useTime, s.readSize)
+    return float64(s.readSize) / float64(useTime) * float64(timeMeasure) / float64(sizeMeasure)
 }
 
-//每秒写入速度
-func (s *Statistic) WriteRate() int64 {
-    return s.writeSize / (int64(time.Since(s.startTime)) / int64(time.Second))
+//每毫秒写入速度
+func (s *Statistic) WriteRate(sizeMeasure int64, timeMeasure time.Duration) float64 {
+    if sizeMeasure <= 0 {
+        sizeMeasure = 1
+    }
+    if timeMeasure <= 0 {
+        timeMeasure = 1
+    }
+    useTime := time.Since(s.startTime)
+    log.Debug("time : %d size %d", useTime, s.writeSize)
+    return float64(s.writeSize) / float64(useTime) * float64(timeMeasure) / float64(sizeMeasure)
 }
 
 //预计完成时间(单位：秒)
 func (s *Statistic) PredictTime() int64 {
-    rRate := s.ReadRate()
-    wRate := s.WriteRate()
     var (
         rTime int64 = 0
         wTime int64 = 0
     )
+    rRate := s.ReadRate(B, time.Second)
+    wRate := s.WriteRate(B, time.Second)
     if rRate == 0 {
         rTime = -1
     } else {
-        rTime = (s.totalSize - s.readSize) / rRate
+        rTime = int64(float64(s.totalSize - s.readSize) / rRate)
     }
+
     if wRate == 0 {
         wTime = -1
     } else {
-        wTime = (s.totalSize - s.writeSize) / wRate
+        wTime = int64(float64(s.totalSize - s.writeSize) / wRate)
     }
 
     if rTime == -1 && wTime == -1 {

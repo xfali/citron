@@ -11,17 +11,15 @@ import (
 )
 
 type MetaStore interface {
-    Open(url string, dataDir string) error
+    Open(url string) error
 
     Insert(info fileinfo.FileInfo) error
 
     Update(info fileinfo.FileInfo) error
 
-    Read(uri string) error
-
     Query() ([]fileinfo.FileInfo, error)
 
-    QueryByPath(uri string) (fileinfo.FileInfo, error)
+    QueryByPath(uri string) ([]fileinfo.FileInfo, error)
 
     Delete(info fileinfo.FileInfo) error
 

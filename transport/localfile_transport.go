@@ -80,18 +80,12 @@ func (t *LocalFileTransport) Open(uri string, incremental, newRepo bool, timesta
     }
 
     s := store.NewDefaultStore()
-    errO := s.Open(filepath.Join(t.backupDir, config.InfoDir), t.backupDir)
+    errO := s.Open(filepath.Join(t.backupDir, config.InfoDir, t.storeFile()))
     if errO != nil {
+        t.record.Close()
         return errO
     }
     t.store = s
-
-    errR := t.storeRead()
-    if errR != nil {
-        s.Close()
-        t.record.Close()
-        return errR
-    }
 
     t.listener = listener
 
@@ -122,14 +116,14 @@ func (t *LocalFileTransport) prepareBackupDir() error {
     return nil
 }
 
-func (t *LocalFileTransport) storeRead() error {
+func (t *LocalFileTransport) storeFile() string {
     name := ""
     if t.newRepo {
         name = "root"
     } else {
         name = t.timeStr()
     }
-    return t.store.Read(name)
+    return name + ".meta"
 }
 
 func (t *LocalFileTransport) timeStr() string {

@@ -26,6 +26,7 @@ const (
 type FileInfo struct {
     FileName string `json:"filename"`
     FilePath string `json:"filepath"`
+    Parent   string `json:"parent"`
 
     From uri.URI `json:"from"`
     To   uri.URI `json:"to"`

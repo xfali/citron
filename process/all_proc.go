@@ -10,23 +10,10 @@ import (
     "fbt/fileinfo"
     "fbt/io"
     "fbt/store"
-    "path/filepath"
-    "strings"
 )
 
 //全量备份
-func allProcess(rootDir, srcDir string, store store.MetaStore, proc ProcFunc) error {
-    rel := io.SubPath(srcDir, rootDir)
-    metaFile := strings.Replace(rel, string(filepath.Separator), "_", -1)
-    if metaFile == "" {
-        metaFile = "root"
-    }
-
-    err := store.Read(metaFile)
-    if err != nil {
-        return err
-    }
-
+func allProcess(srcDir string, store store.MetaStore, proc ProcFunc) error {
     files, err := io.GetDirFiles(srcDir)
     if err != nil {
         return err
@@ -34,7 +21,7 @@ func allProcess(rootDir, srcDir string, store store.MetaStore, proc ProcFunc) er
 
     var result = files
 
-    errDiff := proc(rel, result)
+    errDiff := proc(result)
     if errDiff != nil {
         return errDiff
     }
@@ -42,7 +29,7 @@ func allProcess(rootDir, srcDir string, store store.MetaStore, proc ProcFunc) er
     for _, dir := range result {
         if dir.IsDir {
             if dir.State == fileinfo.Create || dir.State == fileinfo.Modified {
-                err := allProcess(rootDir, dir.FilePath, store, proc)
+                err := allProcess(dir.FilePath, store, proc)
                 if err != nil {
                     return err
                 }

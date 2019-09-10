@@ -67,14 +67,14 @@ func main() {
     defer t.Close()
     s, err := store.Open(
         "file",
-        filepath.Join(filepath.Dir(config.GConfig.SourceDir), config.InfoDir),
-        config.GConfig.SourceDir)
+        filepath.Join(filepath.Dir(config.GConfig.SourceDir), config.InfoDir, "root.meta"))
     if err != nil {
         log.Fatal(err.Error())
     }
     defer s.Close()
 
     errP := process.Process(config.GConfig.SourceDir, t, s, st)
+    log.Info(st.String())
     if errP != nil {
         log.Fatal(errP.Error())
     }
