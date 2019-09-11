@@ -15,10 +15,18 @@ import (
     "fbt/store"
     "fbt/transport"
     "flag"
+    "fmt"
     "github.com/xfali/goutils/log"
     "path/filepath"
     "strings"
 )
+
+var logLv = map[string]int{
+    "DEBUG": log.DEBUG,
+    "INFO":  log.INFO,
+    "WARN":  log.WARN,
+    "ERROR": log.ERROR,
+}
 
 func main() {
     sourceDir := flag.String("s", "", "source dir")
@@ -30,6 +38,8 @@ func main() {
     mergeSrc := flag.String("merge-src", "", "path of src merge dir")
     mergeDest := flag.String("merge-dest", "", "path of dest merge dir")
     mergeSave := flag.String("merge-save", "", "dir save merge result")
+    logPath := flag.String("log-path", "./fbt.log", "log file path")
+    logLevel := flag.String("log-lv", "INFO", "log level: DEBUG | INFO | WARN | ERROR")
 
     flag.Parse()
 
@@ -40,8 +50,15 @@ func main() {
     config.GConfig.NewRepo = *newRepo == "true"
     config.GConfig.SyncTrans = *sync
 
-    log.Info("config: %s\n", config.GConfig.String())
-    log.Level = log.WARN
+    fmt.Printf("config: %s\n", config.GConfig.String())
+    logWriter := log.NewFileLogWriter(*logPath)
+    if logWriter == nil {
+        log.Fatal("log writer init failed")
+    }
+    defer logWriter.Close()
+    log.Level = logLv[*logLevel]
+    log.Writer = logWriter
+    log.Log(log.Level, "config: %s\n", config.GConfig.String())
 
     if *mergeDest != "" || *mergeSrc != "" || *mergeSave != "" {
         if *mergeDest == "" || *mergeSrc == "" || *mergeSave == "" {
@@ -76,8 +93,9 @@ func main() {
 
     errP := process.Process(config.GConfig.SourceDir, t, s, st)
 
-    log.Level = log.INFO
-    log.Info(st.String())
+    fmt.Printf(st.String())
+    log.Log(log.Level, st.String())
+
     if errP != nil {
         log.Fatal(errP.Error())
     }

@@ -10,6 +10,7 @@ import (
     "fmt"
 )
 
+var LogError = &ErrCode{Code: "2001", Msg: "log failed"}
 var SourceDirNotExists = &ErrCode{Code: "5001", Msg: "source dir not exits"}
 var TargetUriEmpty = &ErrCode{Code: "5002", Msg: "target uri is empty"}
 var SourceAndTargetSame = &ErrCode{Code: "5003", Msg: "source path is the same as target uri"}
