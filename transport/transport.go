@@ -7,8 +7,8 @@
 package transport
 
 import (
-    "fbt/fileinfo"
-    "fbt/uri"
+    "citron/fileinfo"
+    "citron/uri"
     "time"
 )
 

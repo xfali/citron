@@ -1,13 +1,13 @@
-# fbt
+# citron
 
 ## 介绍
 
-fbt是一个简单实现的文件备份服务
+citron是一个简单实现的文件备份服务
 
 ## 使用
 
 ```$xslt
-./fbt -s $SRC_DIR -d $DEST_DIR
+./citron -s $SRC_DIR -d $DEST_DIR
 ```
 
 -s 源目录
@@ -32,7 +32,7 @@ fbt是一个简单实现的文件备份服务
   -log-lv string
         日志级别: DEBUG | INFO | WARN | ERROR (default "INFO")
   -log-path string
-        日志文件 (default "./fbt.log")
+        日志文件 (default "./citron.log")
   -multi-task int
         备份任务数，1为同步备份 (default 1)
 ```
@@ -55,7 +55,7 @@ fbt是一个简单实现的文件备份服务
 **其他配置参数：**
 
 ```$xslt
-./fbt -s $SRC_DIR -d $DEST_DIR -n=false
+./citron -s $SRC_DIR -d $DEST_DIR -n=false
 ```
 
 增加-n参数，表示不使用多仓库，只使用同一个仓库（目录）进行增量备份
@@ -71,7 +71,7 @@ fbt是一个简单实现的文件备份服务
 
 ## 注意事项
 
-不要删除与源目录同级目录下的.fbtmeta目录(默认隐藏)。删除会造成增量备份异常或不可用。
+不要删除与源目录同级目录下的.citronmeta目录(默认隐藏)。删除会造成增量备份异常或不可用。
 
 ## TODO
 

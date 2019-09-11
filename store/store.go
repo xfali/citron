@@ -7,7 +7,7 @@
 package store
 
 import (
-    "fbt/fileinfo"
+    "citron/fileinfo"
 )
 
 type MetaStore interface {

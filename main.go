@@ -7,13 +7,13 @@
 package main
 
 import (
-    "fbt/config"
-    "fbt/errors"
-    "fbt/merge"
-    "fbt/process"
-    "fbt/statistic"
-    "fbt/store"
-    "fbt/transport"
+    "citron/config"
+    "citron/errors"
+    "citron/merge"
+    "citron/process"
+    "citron/statistic"
+    "citron/store"
+    "citron/transport"
     "flag"
     "fmt"
     "github.com/xfali/goutils/log"
@@ -37,7 +37,7 @@ func main() {
     mergeSrc := flag.String("merge-src", "", "path of src merge dir")
     mergeDest := flag.String("merge-dest", "", "path of dest merge dir")
     mergeSave := flag.String("merge-save", "", "dir save merge result")
-    logPath := flag.String("log-path", "./fbt.log", "log file path")
+    logPath := flag.String("log-path", "./citron.log", "log file path")
     logLevel := flag.String("log-lv", "INFO", "log level: DEBUG | INFO | WARN | ERROR")
     multiTask := flag.Int("multi-task", 1, "backup multi task number")
 

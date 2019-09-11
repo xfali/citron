@@ -7,9 +7,9 @@
 package merge
 
 import (
-    "fbt/config"
-    "fbt/errors"
-    "fbt/store"
+    "citron/config"
+    "citron/errors"
+    "citron/store"
     "path/filepath"
 )
 

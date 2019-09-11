@@ -7,9 +7,9 @@
 package io
 
 import (
-    "fbt/checksum"
-    "fbt/config"
-    "fbt/fileinfo"
+    "citron/checksum"
+    "citron/config"
+    "citron/fileinfo"
     "fmt"
     "io"
     "io/ioutil"

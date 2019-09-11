@@ -9,7 +9,7 @@ package config
 import "encoding/json"
 
 const (
-    InfoDir = ".fbtmeta"
+    InfoDir = ".citronmeta"
 )
 
 type Config struct {

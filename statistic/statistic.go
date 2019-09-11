@@ -7,7 +7,7 @@
 package statistic
 
 import (
-    "fbt/fileinfo"
+    "citron/fileinfo"
     "fmt"
     "sync"
     "sync/atomic"

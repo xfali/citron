@@ -7,13 +7,13 @@
 package transport
 
 import (
-    "fbt/checksum"
-    "fbt/config"
-    "fbt/errors"
-    "fbt/fileinfo"
-    "fbt/history"
-    "fbt/store"
-    "fbt/uri"
+    "citron/checksum"
+    "citron/config"
+    "citron/errors"
+    "citron/fileinfo"
+    "citron/history"
+    "citron/store"
+    "citron/uri"
     uio "github.com/xfali/goutils/io"
     "github.com/xfali/goutils/log"
     "io"

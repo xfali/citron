@@ -7,8 +7,8 @@
 package test
 
 import (
-    "fbt/checksum"
-    "fbt/fileinfo"
+    "citron/checksum"
+    "citron/fileinfo"
     "testing"
 )
 

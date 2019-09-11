@@ -7,7 +7,7 @@
 package fileinfo
 
 import (
-    "fbt/uri"
+    "citron/uri"
     "github.com/xfali/goutils/log"
     "time"
 )
@@ -94,12 +94,12 @@ func (f *FileInfo) checksumEqual(other FileInfo) bool {
         if other.Checksum == "" {
             return false
         } else {
-            if f.Checksum != other.Checksum {
-                return false
+            if f.Checksum == other.Checksum {
+                return true
             }
         }
     }
-    return true
+    return false
 }
 
 func (f *FileInfo) Empty() bool {

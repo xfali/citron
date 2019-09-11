@@ -7,7 +7,7 @@
 package store
 
 import (
-    "fbt/errors"
+    "citron/errors"
     "github.com/xfali/goutils/log"
 )
 

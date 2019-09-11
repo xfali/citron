@@ -1,4 +1,4 @@
-module fbt
+module citron
 
 go 1.12
 

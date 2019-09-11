@@ -7,14 +7,14 @@
 package process
 
 import (
-    "fbt/cmd"
-    "fbt/config"
-    "fbt/fileinfo"
-    "fbt/io"
-    "fbt/statistic"
-    "fbt/store"
-    "fbt/transport"
-    "fbt/uri"
+    "citron/cmd"
+    "citron/config"
+    "citron/fileinfo"
+    "citron/io"
+    "citron/statistic"
+    "citron/store"
+    "citron/transport"
+    "citron/uri"
     "github.com/xfali/executor"
     "github.com/xfali/goutils/log"
     "path/filepath"

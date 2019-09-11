@@ -7,7 +7,7 @@
 package transport
 
 import (
-    "fbt/errors"
+    "citron/errors"
     "github.com/xfali/goutils/log"
     "time"
 )

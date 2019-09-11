@@ -7,7 +7,7 @@
 package cmd
 
 import (
-    "fbt/statistic"
+    "citron/statistic"
     "github.com/schollz/progressbar/v2"
     "sync/atomic"
     "time"
