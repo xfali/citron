@@ -18,7 +18,7 @@ type Config struct {
     ChecksumType string
     Incremental  bool
     NewRepo      bool
-    SyncTrans    bool
+    MultiTaskNum int
 }
 
 var GConfig Config

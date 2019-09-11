@@ -29,6 +29,12 @@ fbt是一个简单实现的文件备份服务
         是否每次都创建一个新的备份仓库，不覆盖旧仓库 (default "true")
   -sync
         是否同步备份（默认异步）
+  -log-lv string
+        日志级别: DEBUG | INFO | WARN | ERROR (default "INFO")
+  -log-path string
+        日志文件 (default "./fbt.log")
+  -multi-task int
+        备份任务数，1为同步备份 (default 1)
 ```
 
 ### 建议

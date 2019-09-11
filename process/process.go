@@ -58,7 +58,7 @@ func Process(srcDir string, trans transport.Transport, store store.MetaStore, st
 
     var err error
     if len(diffFile) > 0 {
-        if config.GConfig.SyncTrans {
+        if config.GConfig.MultiTaskNum <= 1 {
             err = syncProcessDiff(srcDir, diffFile, trans, store, statis)
         } else {
             err = asyncProcessDiff(srcDir, diffFile, trans, store, statis)
@@ -105,7 +105,7 @@ func syncProcessDiff(
     statis *statistic.Statistic) error {
     //prepare
     for i := range result {
-        relDir := io.SubPath(root, filepath.Dir(result[i].FilePath))
+        relDir := io.SubPath(filepath.Dir(result[i].FilePath), root)
         result[i].From = uri.Get(uri.File, result[i].FilePath)
         uri, err := trans.GetUri(relDir, result[i].FileName)
         if err != nil {
@@ -142,7 +142,7 @@ func asyncProcessDiff(
     var wg sync.WaitGroup
     wg.Add(size)
 
-    exec := executor.NewFixedExecutor(4, size - 4)
+    exec := executor.NewFixedExecutor(config.GConfig.MultiTaskNum, size - config.GConfig.MultiTaskNum)
     defer exec.Stop()
 
     for i := range result {
