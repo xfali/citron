@@ -15,13 +15,16 @@ import (
 
 func KeepDelFiler(info fileinfo.FileInfo, fc FilterChain) error {
     if info.State != fileinfo.Deleted {
-        fc.Filter(info)
+        return fc.Filter(info)
     }
     return nil
 }
 
 func RmSourceFilter(info fileinfo.FileInfo, fc FilterChain) error {
-    fc.Filter(info)
+    err := fc.Filter(info)
+    if err != nil {
+        return err
+    }
 
     path := info.FilePath
     if io.IsPathExists(path) {

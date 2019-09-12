@@ -28,8 +28,9 @@ type FileInfo struct {
     FilePath string `json:"filepath"`
     Parent   string `json:"parent"`
 
-    From uri.URI `json:"from"`
-    To   uri.URI `json:"to"`
+    From   uri.URI `json:"from"`
+    To     uri.URI `json:"to"`
+    Hidden bool `json:"hidden,omitempty"`
 
     State int `json:"state"`
 

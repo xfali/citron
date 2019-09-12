@@ -10,6 +10,7 @@ import (
     "citron/config"
     "citron/ctx"
     "citron/errors"
+    "citron/filter"
     "citron/merge"
     "citron/process"
     "citron/statistic"
@@ -18,6 +19,7 @@ import (
     "flag"
     "fmt"
     "github.com/xfali/goutils/log"
+    "os"
     "path/filepath"
     "strings"
 )
@@ -44,7 +46,16 @@ func main() {
     rmSrc := flag.Bool("remove-source", false, "remove source file")
     rmDelFile := flag.Bool("remove-del", false, "remove deleted source file")
 
+    regexpBackup := flag.String("regexp-backup", "", "backup file select regexp")
+    regexpHidden := flag.String("regexp-hidden", "", "hidden file regexp")
+    regexpHelp := flag.Bool("regexp-help", false, "show regexp example")
+
     flag.Parse()
+
+    if *regexpHelp {
+        filter.PrintRegexp()
+        os.Exit(0)
+    }
 
     config.GConfig.SourceDir = *sourceDir
     config.GConfig.DestUri = *destUri
@@ -54,6 +65,9 @@ func main() {
     config.GConfig.MultiTaskNum = *multiTask
     config.GConfig.RmDel = *rmDelFile
     config.GConfig.RmSrc = *rmSrc
+
+    config.GConfig.RegexpHidden = *regexpHidden
+    config.GConfig.RegexpBackup = *regexpBackup
 
     fmt.Printf("config: %s\n", config.GConfig.String())
     logWriter := log.NewFileLogWriter(*logPath)

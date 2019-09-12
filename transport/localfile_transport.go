@@ -198,6 +198,9 @@ func (t *LocalFileTransport) create(info *fileinfo.FileInfo) error {
             return errC
         }
 
+        if info.Hidden {
+            uio.SetInvisible(dest)
+        }
         info.FilePath = dest
         return nil
     }

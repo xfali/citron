@@ -12,6 +12,11 @@ const (
     InfoDir = ".citronmeta"
 )
 
+type Regexp struct {
+    RegexpHidden string
+    RegexpBackup string
+}
+
 type Config struct {
     SourceDir    string
     DestUri      string
@@ -21,6 +26,8 @@ type Config struct {
     MultiTaskNum int
     RmSrc        bool
     RmDel        bool
+
+    Regexp
 }
 
 var GConfig Config

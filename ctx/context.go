@@ -30,11 +30,20 @@ func (ctx *Context) ConfigFilter(cfg config.Config) {
     ctx.FilterMgr = &filter.FilterManager{}
     ctx.FilterMgr.Add(ctx.SendFile)
 
+    if cfg.RmSrc {
+        ctx.FilterMgr.Add(filter.RmSourceFilter)
+    }
+
+    if cfg.RegexpHidden != "" {
+        ctx.FilterMgr.Add(filter.NewRegexp(cfg.RegexpHidden).HideFiler)
+    }
+
     if !cfg.RmDel {
         ctx.FilterMgr.Add(filter.KeepDelFiler)
     }
-    if cfg.RmSrc {
-        ctx.FilterMgr.Add(filter.RmSourceFilter)
+
+    if cfg.RegexpBackup != "" {
+        ctx.FilterMgr.Add(filter.NewRegexp(cfg.RegexpBackup).BackupFiler)
     }
 }
 
