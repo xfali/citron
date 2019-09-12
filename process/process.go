@@ -9,21 +9,16 @@ package process
 import (
     "citron/cmd"
     "citron/config"
+    "citron/ctx"
     "citron/fileinfo"
-    "citron/io"
-    "citron/statistic"
-    "citron/store"
-    "citron/transport"
-    "citron/uri"
     "github.com/xfali/executor"
-    "github.com/xfali/goutils/log"
     "path/filepath"
     "sync"
 )
 
 type ProcFunc func([]fileinfo.FileInfo) error
 
-func Process(srcDir string, trans transport.Transport, store store.MetaStore, statis *statistic.Statistic) error {
+func Process(srcDir string, ctx *ctx.Context) error {
     srcDir = filepath.Clean(srcDir)
     var diffFile []fileinfo.FileInfo
     statisticFunc := func(result []fileinfo.FileInfo) error {
@@ -31,8 +26,8 @@ func Process(srcDir string, trans transport.Transport, store store.MetaStore, st
             for _, info := range result {
                 diffFile = append(diffFile, info)
                 if !info.IsDir {
-                    statis.AddFileCount(1)
-                    statis.AddTotalSize(info.Size)
+                    ctx.Statistic.AddFileCount(1)
+                    ctx.Statistic.AddTotalSize(info.Size)
                 }
             }
         }
@@ -41,32 +36,32 @@ func Process(srcDir string, trans transport.Transport, store store.MetaStore, st
     }
 
     if config.GConfig.Incremental {
-        err := incrementalProcess(srcDir, store, statisticFunc)
+        err := incrementalProcess(srcDir, ctx.Store, statisticFunc)
         if err != nil {
             return err
         }
     } else {
-        err := allProcess(srcDir, store, statisticFunc)
+        err := allProcess(srcDir, ctx.Store, statisticFunc)
         if err != nil {
             return err
         }
     }
 
-    p := cmd.NewProgress(statis)
+    p := cmd.NewProgress(ctx.Statistic)
     p.Start()
     defer p.Stop()
 
     var err error
     if len(diffFile) > 0 {
         if config.GConfig.MultiTaskNum <= 1 {
-            err = syncProcessDiff(srcDir, diffFile, trans, store, statis)
+            err = syncProcessDiff(srcDir, diffFile, ctx)
         } else {
-            err = asyncProcessDiff(srcDir, diffFile, trans, store, statis)
+            err = asyncProcessDiff(srcDir, diffFile, ctx)
         }
         if err != nil {
             return err
         }
-        store.Save()
+        ctx.Store.Save()
     }
 
     return nil
@@ -100,32 +95,19 @@ func findDiffFiles(list1, list2 []fileinfo.FileInfo, result *[]fileinfo.FileInfo
 func syncProcessDiff(
     root string,
     result []fileinfo.FileInfo,
-    trans transport.Transport,
-    mstore store.MetaStore,
-    statis *statistic.Statistic) error {
+    ctx *ctx.Context) error {
     //prepare
     for i := range result {
-        relDir := io.SubPath(filepath.Dir(result[i].FilePath), root)
-        result[i].From = uri.Get(uri.File, result[i].FilePath)
-        uri, err := trans.GetUri(relDir, result[i].FileName)
+        err := ctx.GetUri(&result[i], root)
         if err != nil {
-            statis.AddFailedFile(result[i])
             return err
         }
-        result[i].To = uri
-        log.Debug("diff file : %v", result[i])
     }
 
     for i := range result {
-        err := trans.Send(result[i])
+        err := ctx.FilterMgr.RunFilter(result[i])
         if err != nil {
-            statis.AddFailedFile(result[i])
             return err
-        }
-
-        errSave := store.SaveMeta(mstore, result[i])
-        if errSave != nil {
-            return errSave
         }
     }
     return nil
@@ -134,9 +116,7 @@ func syncProcessDiff(
 func asyncProcessDiff(
     root string,
     result []fileinfo.FileInfo,
-    trans transport.Transport,
-    mstore store.MetaStore,
-    statis *statistic.Statistic) error {
+    ctx *ctx.Context) error {
     //prepare
     size := len(result)
     var wg sync.WaitGroup
@@ -149,18 +129,7 @@ func asyncProcessDiff(
         index := i
         err := exec.Run(func() {
             defer wg.Done()
-
-            relDir := io.SubPath(filepath.Dir(result[index].FilePath), root)
-            result[index].From = uri.Get(uri.File, result[index].FilePath)
-            uri, err := trans.GetUri(relDir, result[index].FileName)
-            if err != nil {
-                result[index].To = ""
-                log.Error(err.Error())
-                statis.AddFailedFile(result[index])
-                return
-            }
-            result[index].To = uri
-            log.Debug("diff file : %v", result[index])
+            ctx.GetUri(&result[index], root)
         }, 0, nil)
         if err != nil {
             return err
@@ -174,21 +143,7 @@ func asyncProcessDiff(
         index := i
         err := exec.Run(func() {
             defer wg.Done()
-            if result[index].To == "" {
-                return
-            }
-            err := trans.Send(result[index])
-            if err != nil {
-                log.Error(err.Error())
-                statis.AddFailedFile(result[index])
-                return
-            }
-
-            errSave := store.SaveMeta(mstore, result[index])
-            if errSave != nil {
-                log.Error(errSave.Error())
-                return
-            }
+            ctx.FilterMgr.RunFilter(result[index])
         }, 0, nil)
         if err != nil {
             return err

@@ -19,6 +19,8 @@ type Config struct {
     Incremental  bool
     NewRepo      bool
     MultiTaskNum int
+    RmSrc        bool
+    RmDel        bool
 }
 
 var GConfig Config

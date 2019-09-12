@@ -8,6 +8,7 @@ package main
 
 import (
     "citron/config"
+    "citron/ctx"
     "citron/errors"
     "citron/merge"
     "citron/process"
@@ -40,6 +41,8 @@ func main() {
     logPath := flag.String("log-path", "./citron.log", "log file path")
     logLevel := flag.String("log-lv", "INFO", "log level: DEBUG | INFO | WARN | ERROR")
     multiTask := flag.Int("multi-task", 1, "backup multi task number")
+    rmSrc := flag.Bool("remove-source", false, "remove source file")
+    rmDelFile := flag.Bool("remove-del", false, "remove deleted source file")
 
     flag.Parse()
 
@@ -49,6 +52,8 @@ func main() {
     config.GConfig.Incremental = *incremental == "true"
     config.GConfig.NewRepo = *newRepo == "true"
     config.GConfig.MultiTaskNum = *multiTask
+    config.GConfig.RmDel = *rmDelFile
+    config.GConfig.RmSrc = *rmSrc
 
     fmt.Printf("config: %s\n", config.GConfig.String())
     logWriter := log.NewFileLogWriter(*logPath)
@@ -91,7 +96,13 @@ func main() {
     }
     defer s.Close()
 
-    errP := process.Process(config.GConfig.SourceDir, t, s, st)
+    ctx := ctx.Context{
+        Transport: t,
+        Store: s,
+        Statistic: st,
+    }
+    ctx.ConfigFilter(config.GConfig)
+    errP := process.Process(config.GConfig.SourceDir, &ctx)
 
     fmt.Printf(st.String())
     log.Log(log.Level, st.String())

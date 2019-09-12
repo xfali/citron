@@ -62,10 +62,10 @@ func (f *FileInfo) Process(other FileInfo) FileInfo {
     }
 
     if !f.Empty() && !other.Empty() {
-        if !f.ModTime.Equal(other.ModTime) || f.Size != other.Size {
-            if f.checksumEqual(other) {
-                return FileInfo{}
-            }
+        //1、文件大小发生变化，直接备份
+        //2、修改时间相同，不备份
+        //3、修改时间不相同：a、如果未开启文件校验，则直接备份；b、如果开启文件检验，则看文件是否校验码相等
+        if f.Size != other.Size || (!f.ModTime.Equal(other.ModTime) && !f.checksumEqual(other)) {
             ret := other
             ret.State = Modified
             log.Debug("modify file %s", ret.FilePath)
