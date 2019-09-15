@@ -2,7 +2,15 @@
 
 ## 介绍
 
+![citron Logo](images/citron.png)
+
 citron是一个简单实现的文件备份服务
+
+## 安装
+
+```
+go get github.com/xfali/citron
+```
 
 ## 使用
 
