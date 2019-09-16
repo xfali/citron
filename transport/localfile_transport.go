@@ -294,10 +294,10 @@ func (t *LocalFileTransport) copyFile(dst io.Writer, src io.Reader) (written int
     for {
         nr, er := src.Read(buf)
         if nr > 0 {
-            t.listener.AddReadSize(int64(nr))
+            t.listener.OnRead(int64(nr))
             nw, ew := dst.Write(buf[0:nr])
             if nw > 0 {
-                t.listener.AddWriteSize(int64(nw))
+                t.listener.OnWrite(int64(nw))
                 written += int64(nw)
             }
             if ew != nil {
@@ -321,10 +321,8 @@ func (t *LocalFileTransport) copyFile(dst io.Writer, src io.Reader) (written int
 
 type FakeListener int64
 
-func (s FakeListener) AddReadSize(delta int64) int64 {
-    return 0
+func (s FakeListener) OnRead(delta int64) {
 }
 
-func (s FakeListener) AddWriteSize(delta int64) int64 {
-    return 0
+func (s FakeListener) OnWrite(delta int64) {
 }

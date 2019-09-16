@@ -15,7 +15,7 @@ import (
 )
 
 const (
-    B = 1
+    B  = 1
     KB = 1024
     MB = 1024 * KB
     GB = 1024 * MB
@@ -37,9 +37,11 @@ type Statistic struct {
 }
 
 func New() *Statistic {
-    return &Statistic{
+    ret := &Statistic{
         startTime: time.Now(),
     }
+
+    return ret
 }
 
 func (s *Statistic) ResetTime() {
@@ -95,7 +97,7 @@ func logAdd(tag string, addr *int64, delta int64) int64 {
 
 func (s *Statistic) String() string {
     return fmt.Sprintf("Statistic info - Total Size: %d , Total File Count: %d , Read Rate: %.2f MB/S Write Rate: %.2f MB/S, Read: %d , Write: %d , Use time: %d ms",
-        s.totalSize, s.totalFile, s.ReadRate(MB, time.Second),s.WriteRate(MB, time.Second), s.readSize, s.writeSize, time.Since(s.startTime)/time.Millisecond)
+        s.totalSize, s.totalFile, s.ReadRate(MB, time.Second), s.WriteRate(MB, time.Second), s.readSize, s.writeSize, time.Since(s.startTime)/time.Millisecond)
 }
 
 func (s *Statistic) AddFailedFile(file fileinfo.FileInfo) {
@@ -147,13 +149,13 @@ func (s *Statistic) PredictTime() int64 {
     if rRate == 0 {
         rTime = -1
     } else {
-        rTime = int64(float64(s.totalSize - s.readSize) / rRate)
+        rTime = int64(float64(s.totalSize-s.readSize) / rRate)
     }
 
     if wRate == 0 {
         wTime = -1
     } else {
-        wTime = int64(float64(s.totalSize - s.writeSize) / wRate)
+        wTime = int64(float64(s.totalSize-s.writeSize) / wRate)
     }
 
     if rTime == -1 && wTime == -1 {

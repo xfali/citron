@@ -45,6 +45,7 @@ func main() {
     multiTask := flag.Int("multi-task", 1, "backup multi task number")
     rmSrc := flag.Bool("remove-source", false, "remove source file")
     rmDelFile := flag.Bool("remove-del", false, "remove deleted source file")
+    limit := flag.String("limit", "", "backup rate limit, for example: 20M/S or 256K/S")
 
     regexpBackup := flag.String("regexp-backup", "", "backup file select regexp")
     regexpHidden := flag.String("regexp-hidden", "", "hidden file regexp")
@@ -65,6 +66,7 @@ func main() {
     config.GConfig.MultiTaskNum = *multiTask
     config.GConfig.RmDel = *rmDelFile
     config.GConfig.RmSrc = *rmSrc
+    config.GConfig.Limit = *limit
 
     config.GConfig.RegexpHidden = *regexpHidden
     config.GConfig.RegexpBackup = *regexpBackup
@@ -92,12 +94,14 @@ func main() {
     checkResource()
 
     st := statistic.New()
+    rate, interval := config.GConfig.ParseLimit()
+    limiter := statistic.NewLimiter(st, rate, interval)
     t, err := transport.Open(
         "file",
         config.GConfig.DestUri,
         config.GConfig.Incremental,
         config.GConfig.NewRepo,
-        st)
+        limiter)
     if err != nil {
         log.Fatal(err.Error())
     }

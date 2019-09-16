@@ -13,8 +13,8 @@ import (
 )
 
 type Listener interface {
-    AddReadSize(int64) int64
-    AddWriteSize(int64) int64
+    OnRead(int64)
+    OnWrite(int64)
 }
 
 type Transport interface {
