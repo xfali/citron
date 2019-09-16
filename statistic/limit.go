@@ -34,6 +34,10 @@ func calcRate(count int64, t time.Duration) float64 {
     return float64(count) * (float64(time.Second) / float64(t))
 }
 
+func (l *Limiter) ResetTime() {
+    l.start = time.Now()
+}
+
 func (l *Limiter) Check(startTime time.Time, count int64) time.Duration {
     if l.rate == math.MaxInt64 {
         return 0

@@ -48,6 +48,8 @@ func Process(srcDir string, ctx *ctx.Context) error {
     }
 
     p := cmd.NewProgress(ctx.Statistic)
+    ctx.Statistic.ResetTime()
+    ctx.Limiter.ResetTime()
     p.Start()
     defer p.Stop()
 

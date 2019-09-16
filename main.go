@@ -116,8 +116,9 @@ func main() {
 
     ctx := ctx.Context{
         Transport: t,
-        Store: s,
+        Store:     s,
         Statistic: st,
+        Limiter:   limiter,
     }
     ctx.ConfigFilter(config.GConfig)
     errP := process.Process(config.GConfig.SourceDir, &ctx)

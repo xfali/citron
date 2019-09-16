@@ -23,6 +23,7 @@ type Context struct {
     Transport transport.Transport
     Store     store.MetaStore
     Statistic *statistic.Statistic
+    Limiter   *statistic.Limiter
     FilterMgr *filter.FilterManager
 }
 

@@ -8,6 +8,7 @@ package cmd
 
 import (
     "citron/statistic"
+    "fmt"
     "github.com/schollz/progressbar/v2"
     "sync/atomic"
     "time"
@@ -27,7 +28,7 @@ func NewProgress(st *statistic.Statistic) *Progress {
             st.TotalSize(),
             progressbar.OptionSetDescription("备份进度"),
             progressbar.OptionEnableColorCodes(true),
-            progressbar.OptionSetBytes64(st.TotalSize()),
+            //progressbar.OptionSetBytes64(st.TotalSize()),
             progressbar.OptionClearOnFinish()),
         stopChan: make(chan bool),
         st: st,
@@ -65,6 +66,7 @@ func (p *Progress) move() {
     //}
     cur := p.st.WriteSize() - atomic.LoadInt64(&p.current)
     if cur > 0 {
+        p.bar.Describe(fmt.Sprintf("备份中: %.2f MB/S", p.st.ReadRate(statistic.MB, time.Second)))
         p.bar.Add64(cur)
         atomic.StoreInt64(&p.current, p.st.WriteSize())
     }
