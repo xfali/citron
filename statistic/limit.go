@@ -31,6 +31,9 @@ func NewLimiter(st *Statistic, rate int64, interval time.Duration) *Limiter {
 }
 
 func calcRate(count int64, t time.Duration) float64 {
+    if count == 0 {
+        return math.MaxFloat64
+    }
     return float64(count) * (float64(time.Second) / float64(t))
 }
 
@@ -39,7 +42,7 @@ func (l *Limiter) ResetTime() {
 }
 
 func (l *Limiter) Check(startTime time.Time, count int64) time.Duration {
-    if l.rate == math.MaxInt64 {
+    if l.rate == math.MaxFloat64 {
         return 0
     }
 
