@@ -30,7 +30,7 @@ type FileInfo struct {
 
     From   uri.URI `json:"from"`
     To     uri.URI `json:"to"`
-    Hidden bool `json:"hidden,omitempty"`
+    Hidden bool    `json:"hidden,omitempty"`
 
     State int `json:"state"`
 

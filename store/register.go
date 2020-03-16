@@ -15,6 +15,10 @@ var StoreCache = map[string]MetaStore{
     "file": NewDefaultStore(),
 }
 
+func Register(storeType string, store MetaStore) {
+    StoreCache[storeType] = store
+}
+
 func Open(storeType, storeUri string) (MetaStore, error) {
     if s, ok := StoreCache[storeType]; ok {
         err := s.Open(storeUri)
